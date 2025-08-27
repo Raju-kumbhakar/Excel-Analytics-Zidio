@@ -14,12 +14,6 @@ react-scripts==5.0.1            # Create React App scripts and configuration
 # =======
 react-router-dom==7.7.1         # Client-side routing for React applications
 
-# Testing Dependencies
-# ===================
-@testing-library/react==16.3.0  # Testing utilities for React components
-@testing-library/dom==10.4.1    # Testing utilities for DOM elements
-@testing-library/jest-dom==6.6.4 # Custom Jest matchers for DOM testing
-@testing-library/user-event==13.5.0 # Simulate user events in tests
 
 # Performance Monitoring
 # =====================
