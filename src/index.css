@@ -1,0 +1,44 @@
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Background container for canvas-based network animation */
+.animated-grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0; /* behind app content */
+  pointer-events: none;
+  background-color: #000000; /* pure black */
+}
+
+/* Make the network canvas fill the viewport */
+.network-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Subtle vignette to add depth (rendered inside the bg element) */
+.animated-grid-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%);
+}
+
+/* Utility: elevate app root above background */
+#root, .App {
+  position: relative;
+  z-index: 1;
+}
