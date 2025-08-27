@@ -19,9 +19,6 @@ react-router-dom==7.7.1         # Client-side routing for React applications
 # =====================
 web-vitals==2.1.4               # Measure and report Core Web Vitals
 
-# Development Dependencies (Optional)
-# ==================================
-@tailwindcss/vite==4.1.11       # Tailwind CSS integration (currently using CDN)
 
 # Installation Instructions
 # ========================
