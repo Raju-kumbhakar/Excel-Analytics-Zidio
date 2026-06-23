@@ -38,9 +38,9 @@ On server start, a superadmin is seeded if absent:
 You can override via environment variables in `server/.env`:
 
 ```
-SUPERADMIN_EMAIL=superadmin@excelanalytics.app
-SUPERADMIN_PASSWORD=ChangeMe123!
-ADMIN_API_KEY=dev-admin-key
+SUPERADMIN_EMAIL=admin@excelanalytics.app
+SUPERADMIN_PASSWORD=admin@123
+ADMIN_API_KEY=excelanalytics_admin_2026_secure_key
 ```
 
 Change these in production. The admin routes require the `x-admin-auth` header to match `ADMIN_API_KEY`.
