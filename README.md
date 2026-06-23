@@ -181,13 +181,6 @@ npm run eject
 
 ## 🔧 Configuration
 
-### Admin Passkey
-The admin registration passkey is set to `ADMIN2024`. You can change this in:
-```javascript
-// src/components/Auth/Register.js
-const ADMIN_PASSKEY = 'ADMIN2024';
-```
-
 ### OTP System
 The OTP system is currently frontend-only for demonstration:
 - OTPs are generated randomly
