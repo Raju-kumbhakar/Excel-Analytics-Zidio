@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'REACT_APP_API_URL';
 
 async function testAPI() {
   console.log('🧪 Testing fixed API...\n');
