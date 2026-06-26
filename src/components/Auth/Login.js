@@ -144,7 +144,7 @@ const Login = ({ onLogin }) => {
     setOtpError('');
     if (!email) { setOtpError('Enter your email first'); return; }
     try {
-      const resp = await fetch(`${API_BASE}/api/otp/request`, {
+      const resp = await fetch(`${REACT_APP_API_URL}/api/otp/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, purpose: 'login' })
