@@ -43,6 +43,12 @@ async function sendOtpEmail(email, code, purpose = "login") {
 
   // Verify SMTP connection
   try {
+    console.log({
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: process.env.SMTP_SECURE,
+  user: process.env.SMTP_USER,
+});
     await transporter.verify();
     console.log("✅ SMTP server connected successfully.");
   } catch (err) {
