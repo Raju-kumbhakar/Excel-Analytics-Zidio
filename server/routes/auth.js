@@ -72,39 +72,33 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const normalizedEmail = (email || '').trim().toLowerCase();
 
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and password are required'
-      });
-    }
+    console.log('--- LOGIN DEBUG ---');
+    console.log('Incoming Email:', email);
+    console.log('Normalized Email:', normalizedEmail);
 
-    // Find user
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
+      console.log('❌ 401 FAILURE: User email not found in DB');
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
 
-    // Check if user is active
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Account is deactivated'
-      });
-    }
+    console.log('Found User in DB:', user.email);
+    console.log('Stored Password Hash:', user.password);
 
-    // Verify password using schema method
     const isPasswordValid = await user.comparePassword(password);
+    console.log('Comparison Result:', isPasswordValid);
+
     if (!isPasswordValid) {
+      console.log('❌ 401 FAILURE: Password mismatch during bcrypt.compare');
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
+
 
     // ✅ FIX: Update lastLogin without triggering full document re-validation/hashing hooks
     await User.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
