@@ -5,15 +5,53 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000'
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
+  credentials: true
 }));
 app.use(express.json());
 
-// User Schema (inline for simplicity)
+// Cached MongoDB Connection for Serverless Functions
+let isConnected = false;
+
+const connectDB = async () => {
+  if (isConnected && mongoose.connection.readyState === 1) {
+    return;
+  }
+
+  const MONGO_URI = process.env.MONGODB_URI;
+  if (!MONGO_URI) {
+    throw new Error('FATAL ERROR: MONGODB_URI is not defined.');
+  }
+
+  try {
+    const db = await mongoose.connect(MONGO_URI, {
+      bufferCommands: false, // Prevents hanging requests if connection drops
+    });
+    isConnected = db.connections[0].readyState === 1;
+    console.log('MongoDB connected successfully.');
+
+    // Seed superadmin on initial connection
+    await seedSuperAdmin();
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw error;
+  }
+};
+
+// Middleware to ensure Database Connection before handling routes
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Database connection failed' });
+  }
+});
+
+// User Schema
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -33,7 +71,31 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-const User = mongoose.model('User', userSchema);
+// Check if model already exists before compiling (prevents OverwriteModelError in Serverless)
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+// Superadmin Seeder Helper
+async function seedSuperAdmin() {
+  try {
+    const email = process.env.SUPERADMIN_EMAIL || 'superadmin@excelanalytics.app';
+    const password = process.env.SUPERADMIN_PASSWORD || 'ChangeMe123!';
+    const firstName = 'Super';
+    const lastName = 'Admin';
+
+    let adminUser = await User.findOne({ email });
+    if (!adminUser) {
+      adminUser = new User({ email, password, firstName, lastName, role: 'admin' });
+      await adminUser.save();
+      console.log(`Seeded superadmin user: ${email}`);
+    } else if (adminUser.role !== 'admin') {
+      adminUser.role = 'admin';
+      await adminUser.save();
+      console.log(`Ensured admin role for user: ${email}`);
+    }
+  } catch (e) {
+    console.error('Error seeding superadmin:', e);
+  }
+}
 
 // Routes
 app.get('/', (req, res) => {
@@ -44,15 +106,13 @@ app.get('/', (req, res) => {
 const otpRoutes = require('./routes/otp');
 app.use('/api/otp', otpRoutes);
 
-// Mount Admin state routes (protected via ADMIN_API_KEY)
+// Mount Admin state routes
 const adminRoutes = require('./routes/admin');
 app.use('/api/admin', adminRoutes);
 
 // Register endpoint
 app.post('/api/auth/register', async (req, res) => {
   try {
-    console.log('Registration request:', req.body);
-    
     const { email, password, firstName, lastName } = req.body;
 
     if (!email || !password || !firstName || !lastName) {
@@ -131,50 +191,13 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// MongoDB Connection
-const MONGO_URI = process.env.MONGODB_URI;
-
-if (!MONGO_URI) {
-  console.error('FATAL ERROR: MONGODB_URI is not defined.');
-  process.exit(1);
+// Start local server if not running on Vercel
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running locally on port ${PORT}`);
+  });
 }
 
-console.log('Attempting to connect to MongoDB...');
-mongoose.connect(MONGO_URI)
-.then(() => {
-  console.log('MongoDB connected successfully.');
-  // Seed superadmin on successful DB connection
-  (async () => {
-    try {
-      const email = process.env.SUPERADMIN_EMAIL || 'superadmin@excelanalytics.app';
-      const password = process.env.SUPERADMIN_PASSWORD || 'ChangeMe123!';
-      const firstName = 'Super';
-      const lastName = 'Admin';
-
-      let adminUser = await User.findOne({ email });
-      if (!adminUser) {
-        adminUser = new User({ email, password, firstName, lastName, role: 'admin' });
-        await adminUser.save();
-        console.log(`Seeded superadmin user: ${email}`);
-      } else if (adminUser.role !== 'admin') {
-        adminUser.role = 'admin';
-        await adminUser.save();
-        console.log(`Ensured admin role for user: ${email}`);
-      } else {
-        console.log('Superadmin user already exists.');
-      }
-    } catch (e) {
-      console.error('Error seeding superadmin:', e);
-    }
-  })();
-  
-  // Start Server only after DB connection
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`Test at: http://localhost:${PORT}`);
-  });
-})
-.catch(err => {
-  console.error('MongoDB connection error:', err);
-  process.exit(1);
-});
+// Export app for Vercel
+module.exports = app;
