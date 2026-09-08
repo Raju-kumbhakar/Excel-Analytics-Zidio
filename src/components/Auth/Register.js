@@ -59,8 +59,8 @@ const Register = ({ onRegister }) => {
       return;
     }
     try {
-      // Request OTP from backend
-      const resp = await fetch(`${REACT_APP_API_URL}/api/otp/request`, {
+      // ✅ CHANGED: Replaced ${REACT_APP_API_URL} with ${API_BASE}
+      const resp = await fetch(`${API_BASE}/api/otp/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, purpose: 'register' })
@@ -150,7 +150,6 @@ const Register = ({ onRegister }) => {
             <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
             <div className="relative">
               <input type="password" className="w-full p-3 bg-white/10 border border-white/20 text-white placeholder-gray-400 rounded-lg pr-12 focus:ring-2 focus:ring-blue-500" placeholder="Create a password" value={password} onChange={(e)=>setPassword(e.target.value)} required />
-              {/* could add toggle later similar to login */}
             </div>
           </div>
           <div>
@@ -164,7 +163,6 @@ const Register = ({ onRegister }) => {
               </button>
             </div>
           </div>
-          {/* Admin passkey removed; admins go to approval queue */}
           {error && <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg">{error}</div>}
           <button type="submit" className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 text-white font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-800">Create account</button>
         </form>
@@ -178,4 +176,4 @@ const Register = ({ onRegister }) => {
   );
 };
 
-export default Register; 
+export default Register;
