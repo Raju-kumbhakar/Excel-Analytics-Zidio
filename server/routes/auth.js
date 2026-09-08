@@ -33,7 +33,7 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Create new user
+    // ✅ FIX: Use normalizedEmail instead of raw email
     const user = new User({
       email: normalizedEmail,
       password,
@@ -97,7 +97,7 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Verify password
+    // Verify password using schema method
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -106,9 +106,8 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
+    // ✅ FIX: Update lastLogin without triggering full document re-validation/hashing hooks
+    await User.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
 
     // Generate JWT token
     const token = jwt.sign(
@@ -130,6 +129,32 @@ router.post('/login', async (req, res) => {
       success: false,
       message: 'Server error during login'
     });
+  }
+});
+
+// Reset Password
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    const normalizedEmail = (email || '').trim().toLowerCase();
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Email and new password are required' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Assigning new password triggers Mongoose pre('save') bcrypt hashing
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ success: true, message: 'Password reset successful' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Server error resetting password' });
   }
 });
 
