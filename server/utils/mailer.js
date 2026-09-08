@@ -24,9 +24,9 @@ function createTransporter() {
     },
 
     // Prevent timeout issues
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
 
     tls: {
       rejectUnauthorized: false,
@@ -39,21 +39,6 @@ async function sendOtpEmail(email, code, purpose = "login") {
 
   if (!transporter) {
     throw new Error("SMTP transporter could not be created.");
-  }
-
-  // Verify SMTP connection
-  try {
-    console.log({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_SECURE,
-  user: process.env.SMTP_USER,
-});
-    await transporter.verify();
-    console.log("✅ SMTP server connected successfully.");
-  } catch (err) {
-    console.error("❌ SMTP verification failed:", err);
-    throw err;
   }
 
   const mailOptions = {
@@ -84,7 +69,7 @@ async function sendOtpEmail(email, code, purpose = "login") {
   try {
     const info = await transporter.sendMail(mailOptions);
 
-    console.log("✅ Email sent successfully.");
+    console.log("Email sent successfully.");
     console.log("Message ID:", info.messageId);
 
     return {
@@ -92,7 +77,7 @@ async function sendOtpEmail(email, code, purpose = "login") {
       messageId: info.messageId,
     };
   } catch (err) {
-    console.error("❌ Error sending email:", err);
+    console.error("Error sending email:", err);
     throw err;
   }
 }
