@@ -67,7 +67,7 @@ const ForgotPasswordModal = ({ open, onClose }) => {
         {step === 2 && (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div className="text-green-400 mb-2">Verification code sent to <span className="font-mono">{email}</span>!</div>
-        <div className="text-xs text-yellow-400 mb-2">💡 Check browser console (F12) for OTP: <span className="font-mono">{otp}</span></div>
+            <div className="text-xs text-yellow-400 mb-2">💡 Check browser console (F12) for OTP: <span className="font-mono">{otp}</span></div>
             <input value={inputOtp} onChange={e => setInputOtp(e.target.value)} className="input-field bg-white/10 border border-white/20 text-white placeholder-gray-400 w-full" placeholder="Enter OTP" />
             {error && <div className="text-red-400">{error}</div>}
             <button type="submit" className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 text-white font-bold shadow-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-200 mb-2">Verify OTP</button>
@@ -127,7 +127,7 @@ const Login = ({ onLogin }) => {
       }
       if (data.token) localStorage.setItem('token', data.token);
       let savedUser = data.user || {};
-      // Mark superadmin on frontend if matches configured email
+      
       const superEmail = (process.env.REACT_APP_SUPERADMIN_EMAIL || 'superadmin@excelanalytics.app').toLowerCase();
       if ((savedUser.email || '').toLowerCase() === superEmail) {
         savedUser = { ...savedUser, superadmin: true };
@@ -144,7 +144,8 @@ const Login = ({ onLogin }) => {
     setOtpError('');
     if (!email) { setOtpError('Enter your email first'); return; }
     try {
-      const resp = await fetch(`${REACT_APP_API_URL}/api/otp/request`, {
+      // ✅ CHANGED: Replaced ${REACT_APP_API_URL} with ${API_BASE}
+      const resp = await fetch(`${API_BASE}/api/otp/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, purpose: 'login' })
@@ -251,4 +252,4 @@ const Login = ({ onLogin }) => {
   );
 };
 
-export default Login; 
+export default Login;
