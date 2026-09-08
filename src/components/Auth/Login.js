@@ -10,6 +10,7 @@ const ForgotPasswordModal = ({ open, onClose }) => {
   const [inputOtp, setInputOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
   const generateOtp = () => (Math.floor(100000 + Math.random() * 900000)).toString();
@@ -37,13 +38,43 @@ const ForgotPasswordModal = ({ open, onClose }) => {
     }
   };
 
-  const handleResetPassword = (e) => {
+  // ✅ FIXED: Connected password reset to backend server
+  const handleResetPassword = async (e) => {
     e.preventDefault();
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-      onClose();
-    }, 2000);
+    setError('');
+    if (!newPassword) {
+      setError('Please enter a new password');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const resp = await fetch(`${API_BASE}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail, newPassword })
+      });
+
+      const data = await resp.json();
+      if (!resp.ok || !data?.success) {
+        throw new Error(data?.message || 'Failed to reset password');
+      }
+
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+        setStep(1);
+        setEmail('');
+        setInputOtp('');
+        setNewPassword('');
+        onClose();
+      }, 2000);
+    } catch (err) {
+      setError(err.message || 'Error resetting password');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!open) return null;
@@ -54,35 +85,42 @@ const ForgotPasswordModal = ({ open, onClose }) => {
         <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
           <span>🔒</span> Forgot Password
         </h2>
+        
         {step === 1 && (
           <form onSubmit={handleSendOtp} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Email Address</label>
-              <input value={email} onChange={e => setEmail(e.target.value)} className="input-field bg-white/10 border border-white/20 text-white placeholder-gray-400 w-full" placeholder="Enter your email" />
+              <input value={email} onChange={e => setEmail(e.target.value)} className="input-field bg-white/10 border border-white/20 text-white placeholder-gray-400 w-full p-2 rounded" placeholder="Enter your email" />
             </div>
-            {error && <div className="text-red-400">{error}</div>}
+            {error && <div className="text-red-400 text-sm">{error}</div>}
             <button type="submit" className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 text-white font-bold shadow-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-200">Send OTP</button>
           </form>
         )}
+
         {step === 2 && (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
-            <div className="text-green-400 mb-2">Verification code sent to <span className="font-mono">{email}</span>!</div>
+            <div className="text-green-400 mb-2 text-sm">Verification code sent to <span className="font-mono">{email}</span>!</div>
             <div className="text-xs text-yellow-400 mb-2">💡 Check browser console (F12) for OTP: <span className="font-mono">{otp}</span></div>
-            <input value={inputOtp} onChange={e => setInputOtp(e.target.value)} className="input-field bg-white/10 border border-white/20 text-white placeholder-gray-400 w-full" placeholder="Enter OTP" />
-            {error && <div className="text-red-400">{error}</div>}
+            <input value={inputOtp} onChange={e => setInputOtp(e.target.value)} className="input-field bg-white/10 border border-white/20 text-white placeholder-gray-400 w-full p-2 rounded" placeholder="Enter OTP" />
+            {error && <div className="text-red-400 text-sm">{error}</div>}
             <button type="submit" className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 text-white font-bold shadow-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-200 mb-2">Verify OTP</button>
             <button type="button" onClick={() => setOtp(generateOtp())} className="w-full py-2 rounded-lg bg-white/10 border border-white/20 text-blue-300 font-bold shadow-lg hover:bg-white/20 hover:text-purple-300 transition-all duration-200">Resend OTP</button>
           </form>
         )}
+
         {step === 3 && (
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">New Password</label>
-              <input value={newPassword} onChange={e => setNewPassword(e.target.value)} type="password" className="input-field bg-white/10 border border-white/20 text-white placeholder-gray-400 w-full" placeholder="Enter new password" />
+              <input value={newPassword} onChange={e => setNewPassword(e.target.value)} type="password" className="input-field bg-white/10 border border-white/20 text-white placeholder-gray-400 w-full p-2 rounded" placeholder="Enter new password" />
             </div>
-            <button type="submit" className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 text-white font-bold shadow-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-200">Reset Password</button>
+            {error && <div className="text-red-400 text-sm">{error}</div>}
+            <button type="submit" disabled={loading} className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 text-white font-bold shadow-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-200">
+              {loading ? 'Resetting...' : 'Reset Password'}
+            </button>
           </form>
         )}
+
         {showToast && (
           <div className="fixed bottom-8 right-8 z-50 animate-fade-in">
             <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2">
@@ -127,7 +165,7 @@ const Login = ({ onLogin }) => {
       }
       if (data.token) localStorage.setItem('token', data.token);
       let savedUser = data.user || {};
-      
+
       const superEmail = (process.env.REACT_APP_SUPERADMIN_EMAIL || 'superadmin@excelanalytics.app').toLowerCase();
       if ((savedUser.email || '').toLowerCase() === superEmail) {
         savedUser = { ...savedUser, superadmin: true };
@@ -140,15 +178,16 @@ const Login = ({ onLogin }) => {
     }
   };
 
+  // ✅ FIXED: Normalized email input before calling OTP request API
   const requestLoginOtp = async () => {
     setOtpError('');
     if (!email) { setOtpError('Enter your email first'); return; }
     try {
-      // ✅ CHANGED: Replaced ${REACT_APP_API_URL} with ${API_BASE}
+      const normalizedEmail = email.trim().toLowerCase();
       const resp = await fetch(`${API_BASE}/api/otp/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, purpose: 'login' })
+        body: JSON.stringify({ email: normalizedEmail, purpose: 'login' })
       });
       const data = await resp.json();
       if (!resp.ok || !data?.success) throw new Error(data?.message || 'Failed to send OTP');
@@ -159,14 +198,16 @@ const Login = ({ onLogin }) => {
     }
   };
 
+  // ✅ FIXED: Normalized email input before calling OTP verification API
   const verifyLoginOtp = async () => {
     setOtpError('');
     if (!otpCode) { setOtpError('Enter the OTP'); return; }
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       const resp = await fetch(`${API_BASE}/api/otp/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code: otpCode, purpose: 'login' })
+        body: JSON.stringify({ email: normalizedEmail, code: otpCode, purpose: 'login' })
       });
       const data = await resp.json();
       if (!resp.ok || !data?.success) throw new Error(data?.message || 'Verification failed');
@@ -212,11 +253,11 @@ const Login = ({ onLogin }) => {
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
             <div className="relative">
-              <input type={showPassword? 'text':'password'} className="w-full p-3 bg-white/10 border border-white/20 text-white placeholder-gray-400 rounded-lg pr-12 focus:ring-2 focus:ring-blue-500" placeholder="Your password" value={password} onChange={(e)=>setPassword(e.target.value)} required />
-              <button type="button" onClick={()=>setShowPassword(p=>!p)} className="absolute inset-y-0 right-3 my-auto h-9 px-2 rounded-md text-gray-200 hover:text-white bg-white/5 border border-white/10">{showPassword? 'Hide':'Show'}</button>
+              <input type={showPassword ? 'text' : 'password'} className="w-full p-3 bg-white/10 border border-white/20 text-white placeholder-gray-400 rounded-lg pr-12 focus:ring-2 focus:ring-blue-500" placeholder="Your password" value={password} onChange={(e)=>setPassword(e.target.value)} required />
+              <button type="button" onClick={()=>setShowPassword(p=>!p)} className="absolute inset-y-0 right-3 my-auto h-9 px-2 rounded-md text-gray-200 hover:text-white bg-white/5 border border-white/10">{showPassword ? 'Hide' : 'Show'}</button>
             </div>
           </div>
-          {error && <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg">{error}</div>}
+          {error && <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg text-sm">{error}</div>}
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-gray-300 text-sm">
               <input type="checkbox" checked={remember} onChange={(e)=>setRemember(e.target.checked)} className="accent-blue-600" /> Remember me
@@ -226,7 +267,7 @@ const Login = ({ onLogin }) => {
           <button type="submit" className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 text-white font-bold text-lg shadow-lg hover:from-blue-700 hover:to-purple-800">Sign in</button>
           <div className="text-center text-gray-300">or</div>
           <button type="button" onClick={requestLoginOtp} className="w-full py-3 rounded-lg bg-white/10 border border-white/20 text-blue-300 font-bold hover:bg-white/20">Sign in with OTP</button>
-          {otpError && <div className="bg-yellow-500/20 border border-yellow-500 text-yellow-200 px-4 py-3 rounded-lg mt-3">{otpError}</div>}
+          {otpError && <div className="bg-yellow-500/20 border border-yellow-500 text-yellow-200 px-4 py-3 rounded-lg mt-3 text-sm">{otpError}</div>}
         </form>
         <div className="mt-6 text-center text-gray-400 text-sm">
           Don't have an account? <Link to="/register" className="text-blue-400 hover:text-purple-400 font-medium">Create one</Link>
@@ -240,9 +281,9 @@ const Login = ({ onLogin }) => {
           <div className="backdrop-blur-2xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl p-8 w-full max-w-sm animate-fade-in relative">
             <button onClick={()=>setShowOtpLogin(false)} className="absolute top-4 right-4 text-white text-2xl hover:text-red-400">&times;</button>
             <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2"><span>🔐</span> OTP Sign-in</h2>
-            <div className="text-green-400 mb-2">{otpRequested? `OTP sent to ${email}` : 'Requesting OTP...'}</div>
-            <input value={otpCode} onChange={e=>setOtpCode(e.target.value)} className="input-field bg-white/10 border border-white/20 text-white placeholder-gray-400 w-full mb-2" placeholder="Enter OTP" />
-            {otpError && <div className="text-red-400 mb-2">{otpError}</div>}
+            <div className="text-green-400 mb-2 text-sm">{otpRequested ? `OTP sent to ${email}` : 'Requesting OTP...'}</div>
+            <input value={otpCode} onChange={e=>setOtpCode(e.target.value)} className="input-field bg-white/10 border border-white/20 text-white placeholder-gray-400 w-full mb-2 p-2 rounded" placeholder="Enter OTP" />
+            {otpError && <div className="text-red-400 mb-2 text-sm">{otpError}</div>}
             <button onClick={verifyLoginOtp} className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-700 text-white font-bold shadow-lg hover:from-blue-700 hover:to-purple-800 transition-all duration-200 mb-2">Verify</button>
             <button onClick={requestLoginOtp} className="w-full py-2 rounded-lg bg-white/10 border border-white/20 text-blue-300 font-bold shadow-lg hover:bg-white/20 hover:text-purple-300 transition-all duration-200">Resend OTP</button>
           </div>
