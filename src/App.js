@@ -11,7 +11,6 @@ import ProtectedRoute from './components/Common/ProtectedRoute';
 import Landing from './pages/Landing';
 import AnimatedGridBackground from './components/Common/AnimatedGridBackground';
 import About from './pages/About';
-import OurTeam from './pages/OurTeam';
 import Feedback from './pages/Feedback';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -306,7 +305,6 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<Landing />} />
           <Route path="/about" element={<About />} />
-          <Route path="/our-team" element={<OurTeam />} />
           <Route path="/feedback" element={<Feedback />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
