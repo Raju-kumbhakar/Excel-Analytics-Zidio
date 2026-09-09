@@ -73,61 +73,39 @@ router.post('/register', async (req, res) => {
 
 // LOGIN USER
 
+// Temporarily replace your login block to debug:
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = (email || '').trim().toLowerCase();
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and password are required'
-      });
-    }
+    console.log('--- DEBUG LOGIN ---');
+    console.log('Searching for:', normalizedEmail);
 
-    const normalizedEmail = email.trim().toLowerCase();
     const user = await User.findOne({ email: normalizedEmail });
-
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password'
-      });
+      console.log('❌ FAIL: Email not found in DB');
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    // Check active status if flag exists
-    if (user.isActive === false) {
-      return res.status(403).json({
-        success: false,
-        message: 'Account is deactivated. Please contact support.'
-      });
-    }
-
+    console.log('User found. Password hash from DB:', user.password);
+    
     const isPasswordValid = await user.comparePassword(password);
+    console.log('Bcrypt comparison outcome:', isPasswordValid);
+
     if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email or password'
-      });
+      console.log('❌ FAIL: Password mismatch');
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    // Safe update without triggering full save hooks
     await User.updateOne({ _id: user._id }, { $set: { lastLogin: new Date() } });
 
     const token = generateToken(user._id, user.email);
-
-    return res.json({
-      success: true,
-      message: 'Login successful',
-      token,
-      user: user.toJSON()
-    });
+    return res.json({ success: true, message: 'Login successful', token, user: user.toJSON() });
 
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error during login'
-    });
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
