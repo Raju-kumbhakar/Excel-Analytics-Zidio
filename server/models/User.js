@@ -39,7 +39,7 @@ const userSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // Automatically manages createdAt and updatedAt
+    timestamps: true,
   }
 );
 
@@ -56,8 +56,12 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-// Compare candidate password with hashed password in database
+// Safeguarded password comparison method
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  if (!this.password || !candidatePassword) {
+    console.error('❌ Compare failed: Missing password string or hash.');
+    return false;
+  }
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
